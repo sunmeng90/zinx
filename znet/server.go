@@ -1,6 +1,7 @@
 package znet
 
 import (
+	"errors"
 	"fmt"
 	"net"
 )
@@ -26,27 +27,17 @@ func (s *Server) Start() {
 		return
 	}
 	fmt.Println("Server start successfully, listen on ", s.Port)
-
+	var connId uint32 = 0
 	for {
 		accept, err := tcp.AcceptTCP()
 		if err != nil {
 			fmt.Println("Accept, error: ", err)
 			continue
 		}
-
+		connId++
 		go func() {
-			for {
-				buf := make([]byte, 512)
-				nbytes, err := accept.Read(buf)
-				if err != nil {
-					fmt.Println("Read data on socket, error: ", err)
-					continue // stop current conn
-				}
-				if _, err := accept.Write(buf[0:nbytes]); err != nil {
-					fmt.Println("Failed to write back, error: ", err)
-					continue
-				}
-			}
+			// wrap a socket and business handler in a connection
+			NewConn(accept, connId, Echo).Start()
 		}()
 	}
 }
@@ -72,4 +63,13 @@ func NewServer(name string) *Server {
 		IP:        "0.0.0.0",
 		Port:      8999,
 	}
+}
+
+func Echo(conn *net.TCPConn, buf []byte, n int) error {
+	fmt.Println("> ", string(buf[:n]))
+	if _, err := conn.Write([]byte("msg from server")); err != nil {
+		fmt.Println("server write back error", err)
+		return errors.New("server write back error")
+	}
+	return nil
 }
