@@ -4,5 +4,7 @@
   "Name": "ZinxServerApp",
   "Version": "v0.5",
   "MaxConn": 1000,
-  "MaxPacketSize": 4096
+  "MaxPacketSize": 4096,
+  "WorkerPoolSize": 10,
+  "MaxTaskSize":    1024
 }
