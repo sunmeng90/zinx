@@ -2,6 +2,7 @@ package znet
 
 import (
 	"fmt"
+	"github.com/sunmeng90/zinx/utils"
 	"github.com/sunmeng90/zinx/ziface"
 	"net"
 )
@@ -16,6 +17,8 @@ type Server struct {
 }
 
 func (s *Server) Start() {
+	fmt.Printf("[Zinx] Server name: %s, Version: %s, Ip: %s, Port: %d, MaxConn: %d, MaxPacketSize: %d\n",
+		s.Name, s.Version, s.IP, s.Port, utils.GlobalObject.MaxConn, utils.GlobalObject.MaxPacketSize) // TODO make config consistent
 	addr, err := net.ResolveTCPAddr(s.IpVersion, fmt.Sprintf("%s:%d", s.IP, s.Port))
 	if err != nil {
 		fmt.Println("Resolve tc address failed", err)
@@ -64,10 +67,11 @@ func (s *Server) AddRouter(router ziface.IRouter) {
 
 func NewServer(name string) *Server {
 	return &Server{
-		Name:      name,
+		Name:      utils.GlobalObject.Name,
 		IpVersion: "tcp4",
-		IP:        "0.0.0.0",
-		Port:      8999,
+		Version:   utils.GlobalObject.Version,
+		IP:        utils.GlobalObject.Host,
+		Port:      utils.GlobalObject.TcpPort,
 		Router:    nil,
 	}
 }

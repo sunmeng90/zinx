@@ -2,6 +2,7 @@ package znet
 
 import (
 	"fmt"
+	"github.com/sunmeng90/zinx/utils"
 	"github.com/sunmeng90/zinx/ziface"
 	"net"
 )
@@ -39,7 +40,7 @@ func (c *Conn) StartRead() {
 	defer fmt.Println("Stop read on conn ", c.ConnID)
 	defer c.Stop()
 	for {
-		buf := make([]byte, 512)
+		buf := make([]byte, utils.GlobalObject.MaxPacketSize)
 		if _, err := c.Conn.Read(buf); err != nil {
 			fmt.Println("Failed to read from conn")
 			continue
