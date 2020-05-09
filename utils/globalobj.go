@@ -25,7 +25,7 @@ func init() {
 		Host:          "0.0.0.0", //127.0.0.1 not working when there are multiple network interface card (NIC)
 		TcpPort:       8999,
 		Name:          "ZinxServerApp",
-		Version:       "v0.4",
+		Version:       "v0.5",
 		MaxConn:       1000,
 		MaxPacketSize: 4096,
 	}

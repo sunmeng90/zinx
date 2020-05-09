@@ -1,9 +1,10 @@
 package znet
 
 import (
+	"errors"
 	"fmt"
-	"github.com/sunmeng90/zinx/utils"
 	"github.com/sunmeng90/zinx/ziface"
+	"io"
 	"net"
 )
 
@@ -40,15 +41,30 @@ func (c *Conn) StartRead() {
 	defer fmt.Println("Stop read on conn ", c.ConnID)
 	defer c.Stop()
 	for {
-		buf := make([]byte, utils.GlobalObject.MaxPacketSize)
-		if _, err := c.Conn.Read(buf); err != nil {
-			fmt.Println("Failed to read from conn")
-			continue
+		dp := NewDataPack()
+		headData := make([]byte, dp.HeadLen())
+		// don't read all bytes in connection, we need read head and get data len, and only consume
+		// what's meaningful for current packet
+		_, err := io.ReadFull(c.Conn, headData)
+		if err != nil {
+			fmt.Println("failed to read head data", err)
+			break
 		}
-
+		msg, err := dp.UnPack(headData)
+		if err != nil {
+			fmt.Println("failed to unpack head data")
+			break
+		}
+		data := make([]byte, msg.Len())
+		_, err = io.ReadFull(c.Conn, data)
+		if err != nil {
+			fmt.Println("failed to read data", err)
+			break
+		}
+		msg.SetData(data)
 		req := Request{
 			conn: c,
-			data: buf,
+			msg:  msg,
 		}
 		go func(req ziface.IRequest) {
 			c.Router.PreHandle(req)
@@ -81,6 +97,15 @@ func (c *Conn) RemoteAddr() net.Addr {
 	panic("implement me")
 }
 
-func (c *Conn) Send(data []byte) error {
-	panic("implement me")
+func (c *Conn) SendMsg(id uint32, data []byte) error {
+	if c.isClosed {
+		return errors.New("connection is closed")
+	}
+	// pack message
+	msgBytes, err := NewDataPack().Pack(NewMsg(id, data))
+	if err != nil {
+		return err
+	}
+	c.Conn.Write(msgBytes)
+	return nil
 }
