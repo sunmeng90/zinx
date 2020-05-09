@@ -16,6 +16,8 @@ type Conn struct {
 
 	isClosed bool
 
+	MsgChan chan []byte
+
 	ExitChan chan bool
 
 	MessageHandle ziface.IMessageHandle
@@ -26,6 +28,7 @@ func NewConn(conn *net.TCPConn, connID uint32, msgHandle ziface.IMessageHandle) 
 		Conn:          conn,
 		ConnID:        connID,
 		isClosed:      false,
+		MsgChan:       make(chan []byte),
 		ExitChan:      make(chan bool, 1),
 		MessageHandle: msgHandle,
 	}
@@ -33,10 +36,11 @@ func NewConn(conn *net.TCPConn, connID uint32, msgHandle ziface.IMessageHandle) 
 
 func (c *Conn) Start() {
 	fmt.Println("Start conn ", c.ConnID)
-	go c.StartRead()
+	go c.StartReader()
+	go c.StartWriter()
 }
 
-func (c *Conn) StartRead() {
+func (c *Conn) StartReader() {
 	fmt.Println("Start reading")
 	defer fmt.Println("Stop read on conn ", c.ConnID)
 	defer c.Stop()
@@ -70,14 +74,33 @@ func (c *Conn) StartRead() {
 	}
 }
 
+func (c *Conn) StartWriter() {
+	fmt.Println("writer goroutine")
+	defer fmt.Println("writer exit for remote", c.RemoteAddr())
+	for {
+		select {
+		case data := <-c.MsgChan:
+			if _, err := c.Conn.Write(data); err != nil {
+				fmt.Println("writer send data error", err)
+				return
+			}
+		case <-c.ExitChan:
+			fmt.Println("writer got signal to exit")
+			return
+		}
+	}
+}
+
 func (c *Conn) Stop() {
 	fmt.Println("Stop conn ", c.ConnID)
 	if c.isClosed {
 		return
 	}
 	c.Conn.Close()
+	c.ExitChan <- true
 	c.isClosed = true
 	close(c.ExitChan)
+	close(c.MsgChan)
 }
 
 func (c *Conn) GetTCPConn() *net.TCPConn {
@@ -89,7 +112,7 @@ func (c *Conn) GetConnID() uint32 {
 }
 
 func (c *Conn) RemoteAddr() net.Addr {
-	panic("implement me")
+	return c.Conn.RemoteAddr()
 }
 
 func (c *Conn) SendMsg(id uint32, data []byte) error {
@@ -101,6 +124,6 @@ func (c *Conn) SendMsg(id uint32, data []byte) error {
 	if err != nil {
 		return err
 	}
-	c.Conn.Write(msgBytes)
+	c.MsgChan <- msgBytes
 	return nil
 }
