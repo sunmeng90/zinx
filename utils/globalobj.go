@@ -8,13 +8,15 @@ import (
 )
 
 type GlobalObj struct {
-	TcpServer     ziface.IServer
-	Host          string
-	TcpPort       int
-	Name          string
-	Version       string
-	MaxConn       int
-	MaxPacketSize uint32
+	TcpServer      ziface.IServer
+	Host           string
+	TcpPort        int
+	Name           string
+	Version        string
+	MaxConn        int
+	MaxPacketSize  uint32
+	WorkerPoolSize uint32
+	MaxTaskSize    uint32 // not the total size
 }
 
 var GlobalObject *GlobalObj
@@ -22,12 +24,14 @@ var GlobalObject *GlobalObj
 func init() {
 	// default configuration
 	GlobalObject = &GlobalObj{
-		Host:          "0.0.0.0", //127.0.0.1 not working when there are multiple network interface card (NIC)
-		TcpPort:       8999,
-		Name:          "ZinxServerApp",
-		Version:       "v0.5",
-		MaxConn:       1000,
-		MaxPacketSize: 4096,
+		Host:           "0.0.0.0", //127.0.0.1 not working when there are multiple network interface card (NIC)
+		TcpPort:        8999,
+		Name:           "ZinxServerApp",
+		Version:        "v0.5",
+		MaxConn:        1000,
+		MaxPacketSize:  4096,
+		WorkerPoolSize: 10,
+		MaxTaskSize:    1024,
 	}
 	// load custom config
 	GlobalObject.reload()

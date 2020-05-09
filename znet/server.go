@@ -19,6 +19,7 @@ type Server struct {
 func (s *Server) Start() {
 	fmt.Printf("[Zinx] Server name: %s, Version: %s, Ip: %s, Port: %d, MaxConn: %d, MaxPacketSize: %d\n",
 		s.Name, s.Version, s.IP, s.Port, utils.GlobalObject.MaxConn, utils.GlobalObject.MaxPacketSize) // TODO make config consistent
+	s.MessageHandle.StartWorkerPool()
 	addr, err := net.ResolveTCPAddr(s.IpVersion, fmt.Sprintf("%s:%d", s.IP, s.Port))
 	if err != nil {
 		fmt.Println("Resolve tc address failed", err)

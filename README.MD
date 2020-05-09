@@ -53,4 +53,11 @@ https://my.oschina.net/maxid/blog/206546?tdsourcetag=s_pctim_aiomsg
 [Golang Context 是好的设计吗？](https://segmentfault.com/a/1190000017394302)
 
 ## v0.7 decouple read/write
+
 use channel to communicate between reader and writer
+
+## v0.8 worker pool
+
+create work pool to process request
+* one worker has one task queue
+* message handler dispatch tasks over the queues for workers based on the connection id
