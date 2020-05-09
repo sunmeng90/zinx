@@ -1,8 +1,8 @@
 package znet
 
 import (
-	"errors"
 	"fmt"
+	"github.com/sunmeng90/zinx/ziface"
 	"net"
 )
 
@@ -12,6 +12,7 @@ type Server struct {
 	IpVersion string
 	IP        string
 	Port      int
+	Router    ziface.IRouter
 }
 
 func (s *Server) Start() {
@@ -37,7 +38,7 @@ func (s *Server) Start() {
 		connId++
 		go func() {
 			// wrap a socket and business handler in a connection
-			NewConn(accept, connId, Echo).Start()
+			NewConn(accept, connId, s.Router).Start()
 		}()
 	}
 }
@@ -56,20 +57,17 @@ func (s *Server) Serve() {
 	select {} // blocking
 }
 
+func (s *Server) AddRouter(router ziface.IRouter) {
+	fmt.Println("Add a new router")
+	s.Router = router
+}
+
 func NewServer(name string) *Server {
 	return &Server{
 		Name:      name,
 		IpVersion: "tcp4",
 		IP:        "0.0.0.0",
 		Port:      8999,
+		Router:    nil,
 	}
-}
-
-func Echo(conn *net.TCPConn, buf []byte, n int) error {
-	fmt.Println("> ", string(buf[:n]))
-	if _, err := conn.Write([]byte("msg from server")); err != nil {
-		fmt.Println("server write back error", err)
-		return errors.New("server write back error")
-	}
-	return nil
 }

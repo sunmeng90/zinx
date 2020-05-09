@@ -10,23 +10,22 @@ type Conn struct {
 	// connection socket
 	Conn *net.TCPConn
 
-	//
 	ConnID uint32
 
 	isClosed bool
 
-	handleAPI ziface.HandleFun
-
 	ExitChan chan bool
+
+	Router ziface.IRouter
 }
 
-func NewConn(conn *net.TCPConn, connID uint32, callback ziface.HandleFun) *Conn {
+func NewConn(conn *net.TCPConn, connID uint32, router ziface.IRouter) *Conn {
 	return &Conn{
-		Conn:      conn,
-		ConnID:    connID,
-		isClosed:  false,
-		handleAPI: callback,
-		ExitChan:  make(chan bool, 1),
+		Conn:     conn,
+		ConnID:   connID,
+		isClosed: false,
+		ExitChan: make(chan bool, 1),
+		Router:   router,
 	}
 }
 
@@ -41,15 +40,21 @@ func (c *Conn) StartRead() {
 	defer c.Stop()
 	for {
 		buf := make([]byte, 512)
-		n, err := c.Conn.Read(buf)
-		if err != nil {
+		if _, err := c.Conn.Read(buf); err != nil {
 			fmt.Println("Failed to read from conn")
 			continue
 		}
-		// pass bytes to handler
-		if err = c.handleAPI(c.Conn, buf, n); err != nil {
-			fmt.Println("Handle error", err)
+
+		req := Request{
+			conn: c,
+			data: buf,
 		}
+		go func(req ziface.IRequest) {
+			c.Router.PreHandle(req)
+			c.Router.Handle(req)
+			c.Router.PostHandle(req)
+		}(&req)
+
 	}
 }
 
@@ -64,11 +69,11 @@ func (c *Conn) Stop() {
 }
 
 func (c *Conn) GetTCPConn() *net.TCPConn {
-	panic("implement me")
+	return c.Conn
 }
 
 func (c *Conn) GetConnID() uint32 {
-	panic("implement me")
+	return c.ConnID
 }
 
 func (c *Conn) RemoteAddr() net.Addr {
