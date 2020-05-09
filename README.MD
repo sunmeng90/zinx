@@ -51,3 +51,6 @@ https://my.oschina.net/maxid/blog/206546?tdsourcetag=s_pctim_aiomsg
 [上下文 Context](https://draveness.me/golang/docs/part3-runtime/ch06-concurrency/golang-context/)
 
 [Golang Context 是好的设计吗？](https://segmentfault.com/a/1190000017394302)
+
+## v0.7 decouple read/write
+use channel to communicate between reader and writer
