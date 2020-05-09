@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/sunmeng90/zinx/znet"
+	"io"
 	"net"
 	"time"
 )
@@ -14,19 +16,32 @@ func main() {
 		return
 	}
 	for {
-		_, err := conn.Write([]byte("hello"))
+		dp := znet.NewDataPack()
+		msg, err := dp.Pack(znet.NewMsg(1, []byte(".......ping.......")))
 		if err != nil {
-			fmt.Println("failed to write data to server", err)
-			return
+			fmt.Println("failed to pack message", err)
 		}
+		conn.Write(msg)
 
-		buf := make([]byte, 512)
-		nRead, err := conn.Read(buf)
-		if err != nil {
-			fmt.Println("Failed to read data from server")
-			return
+		// read server message
+		head := make([]byte, dp.HeadLen())
+		if _, err = io.ReadFull(conn, head); err != nil {
+			fmt.Println("failed to read server head", err)
+			break
 		}
-		fmt.Println("Got server Data: ", string(buf[:nRead]))
+		serverMsg, err := dp.UnPack(head)
+		if err != nil {
+			fmt.Println("failed to unpack server message head", err)
+			break
+		}
+		if serverMsg.Len() > 0 {
+			data := make([]byte, serverMsg.Len())
+			if _, err = io.ReadFull(conn, data); err != nil {
+				fmt.Println("failed to unpack server message data", err)
+				break
+			}
+			fmt.Println("get server msg: ", string(data))
+		}
 		time.Sleep(1 * time.Second)
 	}
 }

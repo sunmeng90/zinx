@@ -16,26 +16,10 @@ type PingRouter struct {
 	znet.BaseRouter
 }
 
-func (p *PingRouter) PreHandle(req ziface.IRequest) {
-	fmt.Println("pre handle ping ")
-	conn := req.Conn()
-	if _, err := conn.GetTCPConn().Write([]byte("pre handle")); err != nil {
-		fmt.Println("pre handle ping error", err)
-	}
-}
-
 func (p *PingRouter) Handle(req ziface.IRequest) {
-	fmt.Println("handle ping ")
-	conn := req.Conn()
-	if _, err := conn.GetTCPConn().Write([]byte("......ping......")); err != nil {
-		fmt.Println("handle ping error", err)
-	}
-}
-
-func (p *PingRouter) PostHandle(req ziface.IRequest) {
-	fmt.Println("post handle ping ")
-	conn := req.Conn()
-	if _, err := conn.GetTCPConn().Write([]byte("post handle")); err != nil {
-		fmt.Println("post handle ping error", err)
+	fmt.Println("handle ping request msg id: ", req.MsgId(), " data: ", string(req.Data()))
+	err := req.Conn().SendMsg(req.MsgId(), []byte(".......pong......."))
+	if err != nil {
+		fmt.Println("failed to write data to client", err)
 	}
 }
