@@ -17,7 +17,7 @@ func main() {
 	}
 	for {
 		dp := znet.NewDataPack()
-		msg, err := dp.Pack(znet.NewMsg(1, []byte(".......ping.......")))
+		msg, err := dp.Pack(znet.NewMsg(0, []byte(".......ping.......")))
 		if err != nil {
 			fmt.Println("failed to pack message", err)
 		}
@@ -40,7 +40,7 @@ func main() {
 				fmt.Println("failed to unpack server message data", err)
 				break
 			}
-			fmt.Println("get server msg: ", string(data))
+			fmt.Println("get server msg id: ", serverMsg.Id(), string(data))
 		}
 		time.Sleep(1 * time.Second)
 	}
