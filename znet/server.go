@@ -14,6 +14,9 @@ type Server struct {
 	IP            string
 	Port          int
 	MessageHandle ziface.IMessageHandle
+	connManager   ziface.IConnManager
+	OnConnStart   func(conn ziface.IConn)
+	OnConnStop    func(conn ziface.IConn)
 }
 
 func (s *Server) Start() {
@@ -39,16 +42,24 @@ func (s *Server) Start() {
 			fmt.Println("Accept, error: ", err)
 			continue
 		}
+
+		if s.connManager.Len() > utils.GlobalObject.MaxConn {
+			// TODO: send error to client
+			fmt.Println("too many connections, max allowed ", utils.GlobalObject.MaxConn)
+			accept.Close()
+			continue
+		}
 		connId++
 		go func() {
 			// wrap a socket and business handler in a connection
-			NewConn(accept, connId, s.MessageHandle).Start()
+			NewConn(s, accept, connId, s.MessageHandle).Start()
 		}()
 	}
 }
 
 func (s *Server) Stop() {
-	panic("implement me")
+	fmt.Println("Stop server")
+	s.connManager.Clear()
 }
 
 func (s *Server) Serve() {
@@ -66,6 +77,30 @@ func (s *Server) AddRouter(msgId uint32, router ziface.IRouter) {
 	s.MessageHandle.AddRouter(msgId, router)
 }
 
+func (s *Server) ConnManager() ziface.IConnManager {
+	return s.connManager
+}
+
+func (s *Server) SetOnConnStart(onConnStart func(conn ziface.IConn)) {
+	s.OnConnStart = onConnStart
+}
+
+func (s *Server) SetOnConnStop(onConnStop func(conn ziface.IConn)) {
+	s.OnConnStop = onConnStop
+}
+
+func (s *Server) CallOnConnStart(conn ziface.IConn) {
+	if s.OnConnStart != nil {
+		s.OnConnStart(conn)
+	}
+}
+
+func (s *Server) CallOnConnStop(conn ziface.IConn) {
+	if s.OnConnStop != nil {
+		s.OnConnStop(conn)
+	}
+}
+
 func NewServer(name string) *Server {
 	return &Server{
 		Name:          utils.GlobalObject.Name,
@@ -74,5 +109,6 @@ func NewServer(name string) *Server {
 		IP:            utils.GlobalObject.Host,
 		Port:          utils.GlobalObject.TcpPort,
 		MessageHandle: NewMessageHandle(),
+		connManager:   NewConnManager(),
 	}
 }
