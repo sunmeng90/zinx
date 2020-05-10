@@ -10,6 +10,8 @@ import (
 )
 
 type Conn struct {
+	Server ziface.IServer
+
 	// connection socket
 	Conn *net.TCPConn
 
@@ -24,8 +26,12 @@ type Conn struct {
 	MessageHandle ziface.IMessageHandle
 }
 
-func NewConn(conn *net.TCPConn, connID uint32, msgHandle ziface.IMessageHandle) *Conn {
-	return &Conn{
+// There is no such thing as a "pointer to an interface" (technically, you can use one, but generally you don't need it).
+// https://www.howtobuildsoftware.com/index.php/how-do/bKOd/pointers-struct-interface-casting-go-cast-a-struct-pointer-to-interface-pointer-in-golang
+// TODO: can't pass server struct pointer to server *ziface.IServer
+func NewConn(server ziface.IServer, conn *net.TCPConn, connID uint32, msgHandle ziface.IMessageHandle) *Conn {
+	c := &Conn{
+		Server:        server, // TODO: it's wired, refactor this
 		Conn:          conn,
 		ConnID:        connID,
 		isClosed:      false,
@@ -33,6 +39,8 @@ func NewConn(conn *net.TCPConn, connID uint32, msgHandle ziface.IMessageHandle) 
 		ExitChan:      make(chan bool, 1),
 		MessageHandle: msgHandle,
 	}
+	server.ConnManager().Add(c)
+	return c
 }
 
 func (c *Conn) Start() {
@@ -104,6 +112,7 @@ func (c *Conn) Stop() {
 	c.Conn.Close()
 	c.ExitChan <- true
 	c.isClosed = true
+	c.Server.ConnManager().Remove(c)
 	close(c.ExitChan)
 	close(c.MsgChan)
 }

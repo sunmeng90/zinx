@@ -61,3 +61,6 @@ use channel to communicate between reader and writer
 create work pool to process request
 * one worker has one task queue
 * message handler dispatch tasks over the queues for workers based on the connection id
+
+## v0.9 connection manager
+maintain the current active connections, can add/remove/clear connections
