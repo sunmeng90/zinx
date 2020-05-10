@@ -8,6 +8,18 @@ import (
 
 func main() {
 	server := znet.NewServer("zinx")
+	server.SetOnConnStart(func(conn ziface.IConn) {
+		fmt.Println("connection ", conn.GetConnID(), " established")
+		//TODO: the send message on start is displayed and dismissed immediately
+		if err := conn.SendMsg(1, []byte("on connection established from server")); err != nil {
+			fmt.Println("can't send message to client for establish signal", err)
+		}
+	})
+	server.SetOnConnStop(func(conn ziface.IConn) {
+		// can't send message here, connection maybe closed, before the message is processed by the worker
+		fmt.Println("connection ", conn.GetConnID(), " stopped")
+
+	})
 	server.AddRouter(0, &PingRouter{})
 	server.AddRouter(1, &EchoRouter{})
 	server.Serve()

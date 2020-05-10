@@ -47,6 +47,7 @@ func (c *Conn) Start() {
 	fmt.Println("Start conn ", c.ConnID)
 	go c.StartReader()
 	go c.StartWriter()
+	c.Server.CallOnConnStart(c)
 }
 
 func (c *Conn) StartReader() {
@@ -106,9 +107,11 @@ func (c *Conn) StartWriter() {
 
 func (c *Conn) Stop() {
 	fmt.Println("Stop conn ", c.ConnID)
+
 	if c.isClosed {
 		return
 	}
+	c.Server.CallOnConnStop(c)
 	c.Conn.Close()
 	c.ExitChan <- true
 	c.isClosed = true

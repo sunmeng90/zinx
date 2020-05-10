@@ -64,3 +64,4 @@ create work pool to process request
 
 ## v0.9 connection manager
 maintain the current active connections, can add/remove/clear connections
+add hooks after connection created or destroyed
