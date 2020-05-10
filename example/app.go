@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/sunmeng90/zinx/ziface"
 	"github.com/sunmeng90/zinx/znet"
+	"strconv"
 )
 
 func main() {
@@ -14,6 +15,8 @@ func main() {
 		if err := conn.SendMsg(1, []byte("on connection established from server")); err != nil {
 			fmt.Println("can't send message to client for establish signal", err)
 		}
+		fmt.Println("set property on connection")
+		conn.SetProp("name", "connection"+strconv.Itoa(int(conn.GetConnID())))
 	})
 	server.SetOnConnStop(func(conn ziface.IConn) {
 		// can't send message here, connection maybe closed, before the message is processed by the worker

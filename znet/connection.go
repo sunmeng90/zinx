@@ -7,6 +7,7 @@ import (
 	"github.com/sunmeng90/zinx/ziface"
 	"io"
 	"net"
+	"sync"
 )
 
 type Conn struct {
@@ -24,6 +25,10 @@ type Conn struct {
 	ExitChan chan bool
 
 	MessageHandle ziface.IMessageHandle
+
+	props map[string]interface{}
+
+	propsLock sync.RWMutex
 }
 
 // There is no such thing as a "pointer to an interface" (technically, you can use one, but generally you don't need it).
@@ -38,6 +43,8 @@ func NewConn(server ziface.IServer, conn *net.TCPConn, connID uint32, msgHandle 
 		MsgChan:       make(chan []byte),
 		ExitChan:      make(chan bool, 1),
 		MessageHandle: msgHandle,
+		props:         make(map[string]interface{}),
+		propsLock:     sync.RWMutex{},
 	}
 	server.ConnManager().Add(c)
 	return c
@@ -143,4 +150,26 @@ func (c *Conn) SendMsg(id uint32, data []byte) error {
 	}
 	c.MsgChan <- msgBytes
 	return nil
+}
+
+func (c *Conn) SetProp(key string, val interface{}) {
+	c.propsLock.Lock()
+	defer c.propsLock.Unlock()
+	c.props[key] = val
+}
+
+func (c *Conn) Prop(key string) (val interface{}, err error) {
+	c.propsLock.RLock()
+	defer c.propsLock.RUnlock()
+	val, ok := c.props[key]
+	if !ok {
+		return nil, errors.New("not found")
+	}
+	return val, nil
+}
+
+func (c *Conn) RemoveProp(key string) {
+	c.propsLock.Lock()
+	defer c.propsLock.Unlock()
+	delete(c.props, key)
 }

@@ -2,9 +2,9 @@
   "Host": "0.0.0.0",
   "TcpPort": 8999,
   "Name": "ZinxServerApp",
-  "Version": "v0.5",
+  "Version": "v1.0",
   "MaxConn": 1000,
   "MaxPacketSize": 4096,
   "WorkerPoolSize": 10,
-  "MaxTaskSize":    1024
+  "MaxTaskSize": 1024
 }
